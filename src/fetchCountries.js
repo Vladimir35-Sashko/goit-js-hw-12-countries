@@ -10,10 +10,10 @@ const refs = {
 
 refs.input.addEventListener("input", debounce(fetchCountries,500));
 
-function fetchCountries(searchQuery) {
-    const query = searchQuery.target.value;
-    if (query) {
-        fetch(`https://restcountries.eu/rest/v2/name/${query}`)
+function fetchCountries(e) {
+    const searchQuery = e.target.value;
+    if (searchQuery) {
+        fetch(`https://restcountries.eu/rest/v2/name/${searchQuery}`)
             .then((response) => { return response.json(); })
             .then((countries) => {
                 const countriesHtml = countries
