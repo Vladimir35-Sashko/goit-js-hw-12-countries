@@ -1,26 +1,50 @@
-var debounce = require('lodash.debounce');
-import '@pnotify/core/dist/PNotify.css';
-import '@pnotify/desktop/dist/PNotifyDesktop';
+import countrySearch from './services/country-service';
+import refs from './refs'
+import articlesOneCountry from './templates/templatesOneCountry.hbs';
+import countryList from './templates/templatesManyCoutry.hbs'
+
 import '@pnotify/core/dist/BrightTheme.css';
 const { error } = require('@pnotify/core');
-const refs = {
-    input: document.getElementById("input-id"),
-    countriesList: document.getElementById("countries"),
-};
+var debounce = require('lodash.debounce');
 
-refs.input.addEventListener("input", debounce(fetchCountries,500));
 
-function fetchCountries(e) {
-    const searchQuery = e.target.value;
-    if (searchQuery) {
-        fetch(`https://restcountries.eu/rest/v2/name/${searchQuery}`)
-            .then((response) => { return response.json(); })
-            .then((countries) => {
-                const countriesHtml = countries
-                    .map((country) => `<h4>${country.name}</h4>`)
-                    .join('');
-                refs.countriesList.insertAdjacentHTML('afterbegin', countriesHtml);
-                
-            }).catch(console.error);
-    }
+refs.searchForm.addEventListener('input', debounce(countrySearchInputHandler, 500));
+
+function countrySearchInputHandler(e) {
+  e.preventDefault();
+  clearArticlesContainer();
+   const searchQuery = e.target.value;
+  
+  
+  countrySearch.fetchArticles(searchQuery).then(data => {
+    
+      if (data.length > 10) {
+          error({
+              text: "Too many matches found. Please enter a more specific query!"
+          });
+      } else if (data.status === 404) {
+        error({
+          text: "No country has been found. Please enter a more specific query!"
+      });
+      } else if (data.length === 1) {
+          buildListMarkup(data, articlesOneCountry);
+      } else if (data.length <= 10) {
+          buildListMarkup(data, countryList);
+      }
+  })
+  .catch(Error => {
+      Error({
+          text: "You must enter query parameters!"
+      });
+      console.log(Error)
+  })
+}
+
+function buildListMarkup(countryes, template) {
+  const markup = countryes.map(count => template(count)).join();
+  refs.articlesContainer.insertAdjacentHTML('afterbegin', markup)
+}
+
+function clearArticlesContainer() {
+  refs.articlesContainer.innerHTML = '';
 }
